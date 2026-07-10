@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block title %}لوحة التحكم الرئيسية{% endblock %}
+
+{% block content %}
+<!-- استيراد أيقونات Bootstrap وقلم الخطوط الفاخرة للوحة تحكم حديثة -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<style>
+    /* ==========================================================================
+       Premium Neo-Modern Dashboard Theme
+       ========================================================================== */
+    :root {
+        --bg-main: #f8fafc;
+        --card-bg: rgba(255, 255, 255, 0.85);
+        --card-border: rgba(226, 232, 240, 0.7);
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --shadow-sm: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.04), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+        --shadow-lg: 0 20px 25px -5px rgb(0 0 0 / 0.03), 0 8px 10px -6px rgb(0 0 0 / 0.03);
+        --radius-lg: 18px;
+        --radius-xl: 24px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    body {
+        background-color: var(--bg-main) !important;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        color: var(--text-main);
+    }
+
+    /* تأثير الزجاج النقي للكروت */
+    .bento-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--card-border) !important;
+        border-radius: var(--radius-lg) !important;
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        overflow: hidden;
+    }
+
+    .bento-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+        border-color: #cbd5e1 !important;
+    }
+
+    /* حاوية الإشعارات العلوية */
+    .alert-banner {
+        border-radius: var(--radius-lg);
+        border: 1px solid transparent;
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* أنماط مخصصة لكروت المؤشرات الإحصائية */
+    .stat-icon-box {
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        font-size: 1.3rem;
+    }
+
+    /* تخصيص شريط التمرير الأنيق للأجهزة */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 5px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    /* بطاقات ومصغرات الأجهزة */
+    .device-premium-box {
+        background: rgba(248, 250, 252, 0.7);
+        border: 1px solid var(--card-border);
+        border-radius: 14px;
+        transition: var(--transition);
+    }
+    .device-premium-box:hover {
+        background: #ffffff;
+        box-shadow: var(--shadow-sm);
+        border-color: #94a3b8 !important;
+    }
+
+    /* الأزرار التفاعلية */
+    .btn-premium {
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.8rem;
+        padding: 6px 14px;
+        transition: var(--transition);
+    }
+
+    /* حاوية تحليلات Metabase */
+    .metabase-container {
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--card-border);
+        box-shadow: var(--shadow-lg);
+        background: #ffffff;
+    }
+</style>
+
+<div class="container-fluid py-4 text-end" dir="rtl">
+
+    <!-- 1. مؤشر الميزانية العلوي الذكي -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="alert-banner p-3 {% if is_budget_exceeded %}bg-danger-subtle text-danger border-danger-subtle{% else %}bg-success-subtle text-success border-success-subtle{% endif %}">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon-box {% if is_budget_exceeded %}bg-danger text-white{% else %}bg-success text-white{% endif %} shadow-sm">
+                            <i class="bi {% if is_budget_exceeded %}bi-exclamation-triangle-fill{% else %}bi-check-circle-fill{% endif %}"></i>
+                        </div>
+                        <div>
+                            <h6 class="m-0 fw-bold" style="font-size: 1.05rem;">مؤشر ميزانية الشهر الحالي (يوليو 2026)</h6>
+                            <p class="m-0 text-secondary small fw-semibold mt-1">{{ budget_status_msg }}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="badge {% if is_budget_exceeded %}bg-danger{% else %}bg-success{% endif %} px-4 py-2 fs-7 rounded-pill shadow-sm">
+                            الصرفية الحالية: {{ actual_spending_yer }} ريال يمني
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. شبكة Bento للمؤشرات الرئيسية -->
+    <div class="row g-4 mb-4">
+        <!-- كرت الميزانية المستهدفة -->
+        <div class="col-md-4">
+            <div class="card bento-card h-100">
+                <div class="card-body p-4 d-flex flex-column justify-content-between">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted fw-bold small">الميزانية المستهدفة للشهر</span>
+                        <div class="stat-icon-box bg-primary-subtle text-primary">
+                            <i class="bi bi-target"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="display-6 fw-black text-primary m-0 tracking-tight">{{ target_budget }} <span class="fs-6 fw-bold text-muted">ريال</span></h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- كرت الوضع الاقتصادي -->
+        <div class="col-md-4">
+            <div class="card bento-card h-100">
+                <div class="card-body p-4 d-flex flex-column justify-content-between">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted fw-bold small">الوضع الاقتصادي (Eco Mode)</span>
+                        <div class="stat-icon-box bg-success-subtle text-success">
+                            <i class="bi bi-shield-leaf"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="display-6 fw-black text-success m-0">{{ eco_mode }}</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- كرت سعر الكيلوواط -->
+        <div class="col-md-4">
+            <div class="card bento-card h-100">
+                <div class="card-body p-4 d-flex flex-column justify-content-between">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <span class="text-muted fw-bold small">سعر الكيلوواط الحالي</span>
+                        <div class="stat-icon-box bg-warning-subtle text-warning">
+                            <i class="bi bi-lightning-charge"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h2 class="display-6 fw-black text-warning m-0">{{ current_price }} <span class="fs-6 fw-bold text-muted">ريال/ك.و</span></h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. المراقبة اللحظية للأجهزة (Live Stream Monitor) -->
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card bento-card">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="stat-icon-box bg-danger-subtle text-danger">
+                                <i class="bi bi-stopwatch-fill"></i>
+                            </div>
+                            <div>
+                                <h5 class="card-title text-dark fw-bold m-0" style="font-size: 1.15rem;">مراقبة الـ 10 دقائق الحية (Spark)</h5>
+                                <p class="text-muted small mb-0 mt-1">تحليل استهلاك الأجهزة الفوري بالثانية ومقارنته بالحدود القصوى الآمنة.</p>
+                            </div>
+                        </div>
+                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill small">
+                            <span class="spinner-grow spinner-grow-sm text-danger me-1" role="status"></span> بث حي ومباشر
+                        </span>
+                    </div>
+                </div>
+
+                <div class="card-body custom-scrollbar px-4 pb-4 pt-4" style="max-height: 360px; overflow-y: auto;">
+                    {% if violated_devices %}
+                        <div class="row g-3">
+                        {% for v_dev in violated_devices %}
+                        <div class="col-md-6 col-xl-4">
+                            <div class="p-3 device-premium-box h-100 d-flex flex-column justify-content-between
+                                {% if v_dev.max_10min_limit and v_dev.max_10min_limit|float > 0 and v_dev.current_10min_cost|float > v_dev.max_10min_limit|float %}
+                                    border-danger-subtle bg-danger-subtle bg-opacity-10
+                                {% endif %}">
+
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="fw-bold text-dark text-truncate d-flex align-items-center gap-2" style="font-size: 0.9rem;">
+                                        <i class="bi bi-display text-secondary"></i> {{ v_dev.device_name }}
+                                    </span>
+                                    {% if v_dev.max_10min_limit and v_dev.max_10min_limit|float > 0 %}
+                                        {% if v_dev.current_10min_cost|float > v_dev.max_10min_limit|float %}
+                                            <span class="badge bg-danger-subtle text-danger px-2 py-1 rounded-pill fw-bold" style="font-size: 10px;"><i class="bi bi-shield-exclamation"></i> متجاوز</span>
+                                        {% else %}
+                                            <span class="badge bg-success-subtle text-success px-2 py-1 rounded-pill fw-bold" style="font-size: 10px;"><i class="bi bi-shield-check"></i> آمن</span>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill fw-bold" style="font-size: 10px;">غير محدد</span>
+                                    {% endif %}
+                                </div>
+
+                                <div class="small">
+                                    <div class="d-flex justify-content-between mb-2 text-muted border-bottom border-dashed pb-1">
+                                        <span>الحد المسموح:</span>
+                                        <span class="fw-semibold text-dark">
+                                            {% if v_dev.max_10min_limit and v_dev.max_10min_limit|float > 0 %}
+                                                {{ v_dev.max_10min_limit }} ريال
+                                            {% else %}
+                                                —
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="d-flex justify-content-between pt-1">
+                                        <span class="text-muted">الاستهلاك الحالي:</span>
+                                        <span class="{% if v_dev.max_10min_limit and v_dev.max_10min_limit|float > 0 and v_dev.current_10min_cost|float > v_dev.max_10min_limit|float %}text-danger fw-bold{% else %}text-primary fw-bold{% endif %}">
+                                            {{ v_dev.current_10min_cost }} ريال
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <div class="text-muted display-5 mb-3"><i class="bi bi-inbox"></i></div>
+                            <p class="text-muted small m-0 fw-semibold">كل الأجهزة مستقرة. لا توجد بيانات بث حية واصلة حالياً.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. بوابة تحليلات Metabase المدمجة -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card metabase-container border-0">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="stat-icon-box bg-info-subtle text-info">
+                            <i class="bi bi-graph-up-arrow"></i>
+                        </div>
+                        <div>
+                            <h5 class="card-title text-dark fw-bold m-0" style="font-size: 1.15rem;">تحليلات الاستهلاك والاتجاهات التاريخية</h5>
+                            <p class="text-muted small mb-0 mt-1">بوابة التحليلات الشاملة والمحمية من Metabase - تحديث لحظي بأعلى دقة عرض.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-3">
+<div class="card-body p-3">
+    <div class="rounded-4 overflow-hidden border bg-light" style="height: 80vh;">
+        <iframe
+            src="{{ iframe_url }}"
+            allowtransparency
+            scrolling="yes"
+            class="w-100 h-100 border-0"
+            style="overflow: auto; -webkit-overflow-scrolling: touch;">
+        </iframe>
+    </div>
+</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

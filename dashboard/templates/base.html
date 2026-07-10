@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}منصة طاقة المنزل الذكي{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+        /* ==========================================================================
+           1. الإعدادات العامة للمنصة (Premium Modern Layout)
+           ========================================================================== */
+        body {
+            font-family: 'Cairo', sans-serif !important;
+            background-color: #f8fafc !important; /* خلفية ناصعة هادئة */
+            color: #0f172a !important;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ==========================================================================
+           2. شريط التنقل الفاخر (Floating Glass Navbar)
+           ========================================================================== */
+        .custom-navbar {
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(12px) !important;
+            -webkit-backdrop-filter: blur(12px) !important;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8) !important;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.01) !important;
+            padding: 0.5rem 0 !important;
+        }
+
+        /* شعار المنصة المطور */
+        .navbar-brand-custom {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: #0f172a !important;
+            font-weight: 800;
+            font-size: 1.15rem;
+            letter-spacing: -0.3px;
+        }
+
+        .brand-icon-box {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: #ffffff;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+        }
+
+        /* التباعد بين روابط الـ Tabs */
+        .nav-links-gap {
+            gap: 6px;
+        }
+
+        /* روابط التنقل المصممة بنظام الكبسولات الهندسية الحديثة */
+        .nav-link-custom {
+            color: #64748b !important;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 10px 16px !important;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+
+        /* تأثير التمرير الفوقي اللطيف */
+        .nav-link-custom:hover {
+            color: #0f172a !important;
+            background-color: #f1f5f9;
+        }
+
+        /* المظهر النشط الحالي (Active State Capsule) */
+        .nav-link-custom.active {
+            color: #2563eb !important; /* الأزرق الذكي للمنصة */
+            background-color: #eff6ff !important; /* خلفية زرقاء ناعمة جداً */
+            font-weight: 700;
+        }
+
+        .link-icon-style {
+            font-size: 1.05rem;
+            opacity: 0.9;
+        }
+
+        /* ==========================================================================
+           3. بطاقة معلومات المستخدم (User Profile Badge)
+           ========================================================================== */
+        .user-badge {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            padding: 8px 16px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #334155;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.2s ease;
+        }
+
+        .user-badge:hover {
+            border-color: #cbd5e1;
+            background-color: #f8fafc;
+        }
+
+        .user-avatar-circle {
+            width: 24px;
+            height: 24px;
+            background-color: #f1f5f9;
+            color: #64748b;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+        }
+
+        /* زر القائمة المطور للهواتف الذكية */
+        .custom-toggler-icon {
+            display: inline-block;
+            width: 22px;
+            height: 2px;
+            background-color: #0f172a;
+            position: relative;
+        }
+        .custom-toggler-icon::before, .custom-toggler-icon::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 2px;
+            background-color: #0f172a;
+            left: 0;
+        }
+        .custom-toggler-icon::before { top: -6px; }
+        .custom-toggler-icon::after { top: 6px; }
+
+        /* ==========================================================================
+           4. التذييل السفلي (Premium Sleek Footer)
+           ========================================================================== */
+        .custom-footer {
+            background: #ffffff;
+            border-top: 1px solid rgba(226, 232, 240, 0.8) !important;
+            padding: 1.5rem 0;
+        }
+        .footer-text {
+            color: #94a3b8;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+    <nav class="navbar navbar-expand-lg custom-navbar sticky-top">
+        <div class="container-fluid px-4">
+            <a class="navbar-brand-custom" href="/dashboard">
+                <div class="brand-icon-box">
+                    <i class="bi bi-house-lightning-fill"></i>
+                </div>
+                <span class="brand-text">منصة طاقة المنزل الذكي</span>
+            </a>
+
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="custom-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav mx-auto nav-links-gap mt-3 mt-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link-custom {% if request.url.path == '/dashboard' %}active{% endif %}" href="/dashboard">
+                            <i class="bi bi-speedometer2 link-icon-style"></i> لوحة التحكم اللحظية
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link-custom {% if 'batch' in request.url.path %}active{% endif %}" href="/dashboard/batch-analytics">
+                            <i class="bi bi-graph-up-arrow link-icon-style"></i> التحليلات التاريخية والصيانة
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link-custom {% if 'devices' in request.url.path %}active{% endif %}" href="/api/devices/devices-panel">
+                            <i class="bi bi-cpu link-icon-style"></i> إدارة الأجهزة
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link-custom {% if 'preferences' in request.url.path %}active{% endif %}" href="/preferences/">
+                            <i class="bi bi-sliders2 link-icon-style"></i> التفضيلات والإعدادات
+                        </a>
+                    </li>
+                </ul>
+                <div class="user-badge mt-3 mt-lg-0">
+                    <div class="user-avatar-circle">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+                    <span class="user-name">مستخدم رقم #1</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main-content flex-grow-1 container-fluid px-4 pt-4">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="custom-footer mt-5">
+        <div class="container text-center">
+            <p class="footer-text">© 2026 جميع الحقوق محفوظة — مشروع منصة طاقة المنزل الذكي الأوتوماتيكية</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

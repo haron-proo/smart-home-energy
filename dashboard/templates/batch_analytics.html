@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}تحليلات الأداء التاريخية (Batch View){% endblock %}
+
+{% block content %}
+<style>
+    /* ==========================================================================
+       Premium Analytics & Batch View Theme
+       ========================================================================== */
+    :root {
+        --card-bg: rgba(255, 255, 255, 0.85);
+        --card-border: rgba(226, 232, 240, 0.7);
+        --text-main: #0f172a;
+        --text-muted: #64748b;
+        --shadow-sm: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+        --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.04), 0 4px 6px -4px rgb(0 0 0 / 0.04);
+        --radius-lg: 18px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* كروت Bento الذكية للتحليلات */
+    .analytics-bento-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border: 1px solid var(--card-border) !important;
+        border-radius: var(--radius-lg) !important;
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+        overflow: hidden;
+    }
+
+    .analytics-bento-card:hover {
+        transform: translateY(-4px);
+        box-shadow: var(--shadow-md);
+        border-color: #cbd5e1 !important;
+    }
+
+    /* أيقونات الكروت المخصصة */
+    .icon-wrapper-box {
+        width: 52px;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        font-size: 1.35rem;
+    }
+
+    /* تعديل تصميم الجدول الفاخر */
+    .premium-modern-table {
+        border-collapse: separate;
+        border-spacing: 0 10px;
+    }
+
+    .premium-modern-table thead th {
+        font-weight: 700;
+        color: var(--text-muted);
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        border: none !important;
+        padding: 14px 20px !important;
+    }
+
+    .premium-modern-table tbody tr {
+        background-color: rgba(248, 250, 252, 0.6);
+        border: 1px solid var(--card-border);
+        transition: var(--transition);
+    }
+
+    .premium-modern-table tbody tr:hover {
+        background-color: #ffffff;
+        transform: scale(1.005) translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+
+    .premium-modern-table td {
+        padding: 16px 20px !important;
+        border: none !important;
+    }
+
+    .premium-modern-table td:first-child {
+        border-top-right-radius: 12px;
+        border-bottom-right-radius: 12px;
+    }
+
+    .premium-modern-table td:last-child {
+        border-top-left-radius: 12px;
+        border-bottom-left-radius: 12px;
+    }
+
+    /* شارات تصنيف الأجهزة */
+    .tech-device-badge {
+        padding: 6px 14px;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid transparent;
+    }
+
+    .badge-premium-ac { background-color: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+    .badge-premium-heater { background-color: #fff7ed; color: #c2410c; border-color: #ffedd5; }
+    .badge-premium-other { background-color: #faf5ff; color: #6b21a8; border-color: #f3e8ff; }
+</style>
+
+<div class="container-fluid py-4 text-end" dir="rtl" style="background-color: #f8fafc; min-height: 100vh;">
+
+    <!-- ترويسة الصفحة الاحترافية -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-5">
+        <div class="d-flex align-items-center gap-3">
+            <div class="icon-wrapper-box bg-white shadow-sm text-primary border">
+                <i class="bi bi-layer-forward"></i>
+            </div>
+            <div>
+                <h3 class="fw-extrabold m-0" style="color: #1e293b; font-weight: 800; letter-spacing: -0.5px;">لوحة تحليلات الـ Batch التراكمية</h3>
+                <p class="text-muted small m-0 mt-1">قراءات ذكية ناتجة عن معالجة وتلخيص ملفات Parquet التاريخية المدمجة.</p>
+            </div>
+        </div>
+        {% if analytics_data %}
+        <div>
+            <span class="badge bg-white text-secondary border px-3 py-2 rounded-3 shadow-sm fs-7">
+                <span class="spinner-grow spinner-grow-sm text-success me-1" role="status" style="width: 8px; height: 8px;"></span>
+                آخر تحديث للـ Job: <strong class="text-dark">{{ analytics_data[0].last_updated }}</strong>
+            </span>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if analytics_data %}
+
+    <!-- صف المؤشرات الإحصائية (Bento Cards) -->
+    <div class="row g-4 mb-4">
+        <!-- كرت عدد المناطق المشمولة -->
+        <div class="col-12 col-md-4">
+            <div class="card analytics-bento-card p-4 d-flex flex-row align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small d-block mb-1 fw-bold">عدد المناطق المشمولة</span>
+                    <h3 class="fw-black m-0 text-dark">{{ analytics_data|length }} مناطق</h3>
+                </div>
+                <div class="icon-wrapper-box bg-primary-subtle text-primary">
+                    <i class="bi bi-geo-alt"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- كرت أعلى قدرة مسجلة -->
+        <div class="col-12 col-md-4">
+            <div class="card analytics-bento-card p-4 d-flex flex-row align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small d-block mb-1 fw-bold">أعلى قدرة مسجلة</span>
+                    <h3 class="fw-black m-0 text-danger">
+                        {% set max_peak = namespace(value=0) %}
+                        {% for item in analytics_data %}
+                            {% if item.peak_power_watts|float > max_peak.value|float %}
+                                {% set max_peak.value = item.peak_power_watts %}
+                            {% endif %}
+                        {% endfor %}
+                        {{ max_peak.value }} <span class="fs-6 fw-bold text-muted">W</span>
+                    </h3>
+                </div>
+                <div class="icon-wrapper-box bg-danger-subtle text-danger">
+                    <i class="bi bi-lightning-charge"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- كرت إجمالي نقاط البيانات -->
+        <div class="col-12 col-md-4">
+            <div class="card analytics-bento-card p-4 d-flex flex-row align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small d-block mb-1 fw-bold">إجمالي نقاط البيانات المفحوصة</span>
+                    <h3 class="fw-black m-0 text-success">
+                        {% set total_p = namespace(value=0) %}
+                        {% for item in analytics_data %}
+                            {% set total_p.value = total_p.value + item.total_records|int %}
+                        {% endfor %}
+                        {{ total_p.value }}
+                    </h3>
+                </div>
+                <div class="icon-wrapper-box bg-success-subtle text-success">
+                    <i class="bi bi-folder2-open"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- كرت ملخص الأنماط الطويلة وجدول البيانات الفاخر -->
+    <div class="card analytics-bento-card border-0">
+        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-0">
+            <h5 class="fw-bold m-0 text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-list-stars text-primary"></i> ملخص الأنماط الطويلة للأجهزة والمناطق
+            </h5>
+        </div>
+        <div class="card-body px-4 pb-4">
+            <div class="table-responsive">
+                <table class="table premium-modern-table align-middle">
+                    <thead>
+                        <tr class="text-secondary">
+                            <th>المنطقة (Zone)</th>
+                            <th>نوع الجهاز</th>
+                            <th>المعدل التاريخي</th>
+                            <th>أعلى ذروة مسجلة</th>
+                            <th>حجم العينات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in analytics_data %}
+                        <tr>
+                            <td class="fw-bold text-dark">
+                                <span class="d-inline-flex align-items-center justify-content-center p-2 bg-light rounded-3 me-2 border text-secondary" style="width:34px; height:34px;">
+                                    <i class="bi bi-geo-fill"></i>
+                                </span>
+                                {{ item.zone }}
+                            </td>
+                            <td>
+                                {% if 'AC' in item.device_type %}
+                                    <span class="tech-device-badge badge-premium-ac"><i class="bi bi-snow2"></i> {{ item.device_type }}</span>
+                                {% elif 'Heater' in item.device_type %}
+                                    <span class="tech-device-badge badge-premium-heater"><i class="bi bi-thermometer-high"></i> {{ item.device_type }}</span>
+                                {% else %}
+                                    <span class="tech-device-badge badge-premium-other"><i class="bi bi-plugin"></i> {{ item.device_type }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fw-bold text-primary fs-5">{{ item.overall_avg_watts }}</span> <small class="text-muted fw-bold">W</small>
+                            </td>
+                            <td>
+                                <span class="fw-bold text-danger fs-5">{{ item.peak_power_watts }}</span> <small class="text-muted fw-bold">W</small>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-secondary border px-3 py-2 fw-semibold rounded-3">
+                                    {{ item.total_records }} رصدة
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    {% else %}
+    <!-- صفحة حالة عدم وجود بيانات (Empty State) المحسنة -->
+    <div class="text-center py-5 bg-white rounded-4 shadow-sm border my-5" style="max-width: 600px; margin: 0 auto;">
+        <div class="text-muted display-3 mb-4"><i class="bi bi-database-dash text-warning"></i></div>
+        <h4 class="fw-bold text-dark mb-2">لم يتم رصد نتائج تحليلات الـ Batch بعد</h4>
+        <p class="text-muted mx-auto px-4 mb-4" style="max-width: 450px;">
+            يبدو أن قاعدة البيانات تفتقر إلى البيانات الملخصة حالياً. يرجى تشغيل السكريبت المخصص لمعالجة ملفات الحزم التاريخية أولاً.
+        </p>
+        <div class="p-3 bg-light rounded-3 d-inline-block border text-start mb-3" dir="ltr">
+            <code class="text-danger fw-bold">python process_parquet_batch.py</code>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

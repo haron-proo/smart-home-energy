@@ -1,0 +1,35 @@
+.custom-table th {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #495057;
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    padding: 12px;
+}
+
+.custom-table td {
+    padding: 14px 12px;
+    font-size: 0.95rem;
+    border-bottom: 1px solid #f1f3f5;
+}
+
+.device-tag {
+    background-color: #f8f9fa;
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid #e9ecef;
+    font-weight: 500;
+}
+
+.card {
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.text-primary {
+    color: #0d6efd !important;
+}
+
+.text-danger {
+    color: #dc3545 !important;
+}

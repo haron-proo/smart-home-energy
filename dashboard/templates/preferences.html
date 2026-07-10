@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة وتفتيش الأجهزة ذكياً{% endblock %}
+
+{% block content %}
+<div class="container py-4 text-end" dir="rtl">
+    <div class="card main-panel-card mx-auto shadow-sm border-0" style="max-width: 850px;">
+
+        <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="p-2 bg-primary-subtle text-primary rounded-3 shadow-sm">⚙️</span>
+                <h5 class="card-title text-dark fw-bold m-0" style="font-size: 1.2rem;">إعدادات وتفضيلات الطاقة للمنزل</h5>
+            </div>
+            <p class="text-muted small mb-0 pe-4">ضبط حدود الميزانية الشهرية والتحكم في الخوارزمية الاقتصادية للأجهزة المشغلة بالريال اليمني.</p>
+        </div>
+
+        <div class="card-body p-4 bg-white">
+            <form method="POST" action="/preferences/">
+
+                <h6 class="text-secondary border-bottom pb-2 mb-3 fw-bold">التفضيلات العامة للمنزل</h6>
+                <div class="row g-3 align-items-center mb-4">
+                    <div class="col-md-6 text-start">
+                        <label class="form-label fw-semibold text-dark small">الميزانية الشهرية المستهدفة (ريال يمني)</label>
+                        <input type="number" step="1" class="form-control text-end rounded-3" name="target_monthly_budget_usd" value="{{ user_pref[0] if user_pref else 50000 }}" required>
+                    </div>
+                    <div class="col-md-6 d-flex justify-content-start pt-md-4">
+                        <div class="form-check form-switch card p-2 px-4 bg-light border-0 w-100 flex-row-reverse align-items-center justify-content-between rounded-3">
+                            <input class="form-check-input ms-0 shadow-none" type="checkbox" name="eco_mode_enabled" id="ecoMode" {{ 'checked' if user_pref and user_pref[1] else '' }}>
+                            <label class="form-check-label fw-semibold text-success pe-2" for="ecoMode">تفعيل الوضع الاقتصادي (Eco Mode)</label>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="text-secondary border-bottom pb-2 mb-3 fw-bold">تخصيص حدود الأجهزة (لـ 10 دقائق حية)</h6>
+                <div id="device-container">
+                    {% if device_prefs %}
+                        {% for dev in device_prefs %}
+                        <div class="row g-2 mb-3 device-row align-items-center">
+                            <div class="col-md-6">
+                                <select class="form-select text-end rounded-3" name="device_name" required>
+                                    <option value="">-- اختر الجهاز --</option>
+                                    {% for av_dev in available_devices %}
+                                        <option value="{{ av_dev[0] }}" {% if dev[0] == av_dev[0] %}selected{% endif %}>{{ av_dev[1] }} ({{ av_dev[0] }})</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="number" step="0.1" class="form-control text-end rounded-3" name="max_price_limit_usd" value="{{ dev[1] }}" placeholder="الحد الأقصى لـ 10 دقائق (ريال)" required>
+                            </div>
+                            <div class="col-md-1 d-flex justify-content-center">
+                                <button type="button" class="btn btn-action-delete w-100" onclick="this.closest('.device-row').remove()">🗑️</button>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="row g-2 mb-3 device-row align-items-center">
+                            <div class="col-md-6">
+                                <select class="form-select text-end rounded-3" name="device_name" required>
+                                    <option value="">-- اختر الجهاز --</option>
+                                    {% for av_dev in available_devices %}
+                                        <option value="{{ av_dev[0] }}">{{ av_dev[1] if av_dev[1] else av_dev[0] }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <input type="number" step="0.1" class="form-control text-end rounded-3" name="max_price_limit_usd" placeholder="الحد الأقصى لـ 10 دقائق (ريال)" required>
+                            </div>
+                            <div class="col-md-1 d-flex justify-content-center">
+                                <button type="button" class="btn btn-action-delete w-100" onclick="this.closest('.device-row').remove()">🗑️</button>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="text-start mt-3">
+                    <button type="button" class="btn btn-sm btn-outline-secondary px-3 fw-bold rounded-3" onclick="addDeviceRow()">
+                        ➕ إضافة جهاز جديد من القائمة
+                    </button>
+                </div>
+
+                <hr class="my-4 text-muted opacity-25">
+
+                <button type="submit" class="btn btn-success w-100 fw-bold py-2.5 rounded-3 shadow-sm border-0" style="background: linear-gradient(135deg, #10b981, #059669);">
+                    حفظ التعديلات والتفضيلات الذكية ✨
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    const availableDevices = [
+        {% for av_dev in available_devices %}
+            { id: "{{ av_dev[0] }}", name: "{{ av_dev[1] if av_dev[1] else av_dev[0] }}" },
+        {% endfor %}
+    ];
+
+    function addDeviceRow() {
+        const container = document.getElementById('device-container');
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-3 device-row align-items-center';
+
+        let optionsHtml = '<option value="">-- اختر الجهاز --</option>';
+        availableDevices.forEach(dev => {
+            optionsHtml += `<option value="${dev.id}">${dev.name} (${dev.id})</option>`;
+        });
+
+        row.innerHTML = `
+            <div class="col-md-6">
+                <select class="form-select text-end rounded-3" name="device_name" required>
+                    ${optionsHtml}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <input type="number" step="0.1" class="form-control text-end rounded-3" name="max_price_limit_usd" placeholder="الحد الأقصى لـ 10 دقائق (ريال)" required>
+            </div>
+            <div class="col-md-1 d-flex justify-content-center">
+                <button type="button" class="btn btn-action-delete w-100" onclick="this.closest('.device-row').remove()">🗑️</button>
+            </div>
+        `;
+        container.appendChild(row);
+    }
+</script>
+{% endblock %}

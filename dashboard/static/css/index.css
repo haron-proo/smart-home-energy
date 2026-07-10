@@ -1,0 +1,206 @@
+:root {
+    --glass-bg: rgba(255, 255, 255, 0.85);
+    --glass-border: rgba(230, 235, 240, 0.8);
+    --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    --hover-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    --transition-fast: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body {
+    background-color: #f4f7fc !important;
+}
+
+/* كروت المؤشرات العلوية الإحصائية */
+.metric-card {
+    border: none !important;
+    border-radius: 20px !important;
+    background: var(--glass-bg);
+    backdrop-filter: blur(10px);
+    box-shadow: var(--card-shadow);
+    transition: var(--transition-fast);
+    overflow: hidden;
+    position: relative;
+}
+.metric-card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--hover-shadow);
+}
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 5px;
+}
+.metric-primary::before { background: linear-gradient(90deg, #4f46e5, #3b82f6); }
+.metric-success::before { background: linear-gradient(90deg, #10b981, #34d399); }
+.metric-warning::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+/* كروت الألواح والتحكم الرئيسية */
+.main-panel-card {
+    border: none !important;
+    border-radius: 24px !important;
+    background: #ffffff;
+    box-shadow: var(--card-shadow);
+}
+
+/* تخصيص شريط التمرير الأنيق للأجهزة */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* بطاقات ومصغرات الأجهزة */
+.device-item-box {
+    transition: var(--transition-fast);
+    border: 1px solid var(--glass-border) !important;
+    border-radius: 16px !important;
+    background: #f8fafc;
+}
+.device-item-box:hover {
+    background: #ffffff !important;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border-color: #cbd5e1 !important;
+}
+
+/* أزرار التحكم التفاعلية المتطورة */
+.btn-action-on {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    border-color: #22c55e !important;
+    color: #22c55e !important;
+    background: transparent;
+    transition: var(--transition-fast);
+}
+.btn-action-on:hover {
+    background: #22c55e !important;
+    color: #fff !important;
+}
+.btn-action-off {
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    border-color: #ef4444 !important;
+    color: #ef4444 !important;
+    background: transparent;
+    transition: var(--transition-fast);
+}
+.btn-action-off:hover {
+    background: #ef4444 !important;
+    color: #fff !important;
+}
+
+/* حاوية تحليلات خريطة Metabase الإطارية */
+.metabase-wrapper {
+    border-radius: 20px;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.05);
+    border: 1px solid var(--glass-border) !important;
+}
+/* تنسيقات إضافية خاصة بجدول الأجهزة المتطورة */
+.type-badge {
+    background: #f1f5f9;
+    color: #475569;
+    padding: 4px 10px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border: 1px solid #e2e8f0;
+}
+
+/* أزرار الإجراءات داخل الجدول */
+.btn-device-on {
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+    border-color: #22c55e !important;
+    color: #22c55e !important;
+    background: transparent;
+    transition: var(--transition-fast);
+}
+.btn-device-on:hover { background: #22c55e !important; color: #fff !important; }
+
+.btn-device-off {
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+    border-color: #ef4444 !important;
+    color: #ef4444 !important;
+    background: transparent;
+    transition: var(--transition-fast);
+}
+.btn-device-off:hover { background: #ef4444 !important; color: #fff !important; }
+
+.btn-device-auto {
+    border-radius: 8px !important;
+    font-weight: 700 !important;
+    font-size: 11px !important;
+    border-color: #eab308 !important;
+    color: #eab308 !important;
+    background: transparent;
+    transition: var(--transition-fast);
+}
+.btn-device-auto:hover { background: #eab308 !important; color: #fff !important; }
+
+/* ==========================================================================
+   تنسيقات الجداول وحقول الإدخال المطورة (Minimal Tech)
+   ========================================================================== */
+
+/* رأس الجدول ثابت بلون أبيض صافي وخط سفلي نحيف جداً */
+.table-light {
+    --bs-table-bg: #ffffff !important;
+    border-bottom: 2px solid #0f172a !important; /* خط داكن هندسي أسفل العناوين */
+}
+.table-light th {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+    font-size: 0.85rem;
+    letter-spacing: 0.5px;
+}
+
+/* تخصيص حقول الإدخال - تركيز هادئ باللون الأسود/الرمادي الداكن بدون توهج أزرق */
+.form-control:focus, .form-select:focus {
+    border-color: #0f172a !important; /* يتحول الإطار للون الداكن عند الكتابة */
+    box-shadow: none !important; /* إلغاء التوهج الأزرق تماماً */
+    background-color: #ffffff;
+}
+.form-control, .form-select {
+    border: 1px solid #e2e8f0;
+    color: #334155;
+    transition: border-color 0.15s ease;
+}
+
+/* زر الحذف الأيقوني - ستايل مينيمال مونوكروم (بدون خلفية حمراء) */
+.btn-action-delete {
+    border-radius: 6px !important;
+    border: 1px solid #e2e8f0 !important;
+    background-color: #ffffff;
+    color: #64748b; /* لون رمادي هادئ في الحالة العادية */
+    padding: 6px 0 !important;
+    transition: all 0.2s ease;
+}
+/* تأثير التمرير لزر الحذف: يتحول النص للأحمر الهادئ والإطار فقط دون ملء الخلفية */
+.btn-action-delete:hover {
+    background-color: #fff5f5 !important;
+    color: #dc2626 !important;
+    border-color: #fca5a5 !important;
+}
+
+/* تحسين السويتش الخاص بالوضع الاقتصادي - لون داكن أنيق متناسق مع النظام */
+.form-check-input:checked {
+    background-color: #0f172a !important; /* أسود/نيلي داكن بدلاً من الأخضر التقليدي */
+    border-color: #0f172a !important;
+}
+.form-check-input {
+    cursor: pointer;
+    border-color: #cbd5e1;
+}
+.form-check-input:focus {
+    box-shadow: none !important; /* إلغاء التوهج الأزرق للسويتش */
+}

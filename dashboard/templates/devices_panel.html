@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+
+{% block title %}إدارة وتفتيش الأجهزة ذكياً{% endblock %}
+
+{% block content %}
+<div class="container py-4 text-end" dir="rtl">
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card main-panel-card h-100 shadow-sm border-0">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="p-2 bg-primary-subtle text-primary rounded-3 shadow-sm">➕</span>
+                        <h5 class="card-title text-dark fw-bold m-0" style="font-size: 1.2rem;">إضافة جهاز ذكي جديد</h5>
+                    </div>
+                    <p class="text-muted small mb-0 pe-4">تسجيل جهاز جديد في قاعدة البيانات وتحديد تصنيفه الاقتصادي.</p>
+                </div>
+                <div class="card-body p-4">
+                    <form method="POST" action="/api/devices/devices-panel/add">
+
+                        <div class="mb-3 text-start">
+                            <label class="form-label fw-bold text-secondary small">معرف الجهاز (Device ID - فريد):</label>
+                            <input type="text" name="device_id" class="form-control rounded-3" placeholder="مثال: Specific_Asset_PC" required>
+                        </div>
+
+                        <div class="mb-3 text-start">
+                            <label class="form-label fw-bold text-secondary small">اسم الجهاز الودي (Name):</label>
+                            <input type="text" name="device_name" class="form-control rounded-3" placeholder="مثال: حاسوبي الشخصي" required>
+                        </div>
+
+                        <div class="mb-3 text-start">
+                            <label class="form-label fw-bold text-secondary small">نوع الجهاز (Type):</label>
+                            <select name="device_type" class="form-select rounded-3">
+                                <option value="Appliance">الأجهزة المنزلية (Appliance)</option>
+                                <option value="Heavy_Appliance">الأجهزة الثقيلة (Heavy_Appliance)</option>
+                                <option value="Critical_Appliance">الأجهزة الحرجة (Critical_Appliance)</option>
+                                <option value="Entertainment">أجهزة الترفيه (Entertainment)</option>
+                                <option value="Lighting">الإضاءة والأنوار (Lighting)</option>
+                                <option value="AC">التكييف والتبريد (AC)</option>
+                                <option value="Security">أنظمة الأمان (Security)</option>
+                                <option value="Sensor">الحساسات والمستشعرات (Sensor)</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-4 text-start">
+                            <label class="form-label fw-bold text-secondary small">الحالة التشغيلية الأولية:</label>
+                            <select name="initial_status" class="form-select rounded-3">
+                                <option value="AUTO">تلقائي (AUTO)</option>
+                                <option value="ON">تشغيل إجباري (ON)</option>
+                                <option value="OFF">إطفاء إجباري (OFF)</option>
+                            </select>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100 fw-bold py-2.5 rounded-3 shadow-sm border-0" style="background: linear-gradient(135deg, #10b981, #059669);">
+                            تسجيل الجهاز في الداتابيز 🚀
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card main-panel-card h-100 shadow-sm border-0">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 pb-2">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="p-2 bg-dark-subtle text-dark rounded-3 shadow-sm">📱</span>
+                        <h5 class="card-title text-dark fw-bold m-0" style="font-size: 1.2rem;">الأجهزة المتصلة بالنظام وحالتها</h5>
+                    </div>
+                    <p class="text-muted small mb-0 pe-4">جدول المراقبة المباشر وحالة التشغيل الفورية لكل أصول الشبكة.</p>
+                </div>
+                <div class="card-body p-0 pt-2">
+                    <div class="table-responsive custom-scrollbar" style="max-height: 440px; overflow-y: auto;">
+                        <table class="table table-hover align-middle mb-0 text-end">
+                            <thead class="table-light text-secondary sticky-top top-0" style="z-index: 10;">
+                                <tr>
+                                    <th class="py-3 px-4">المعرف</th>
+                                    <th class="py-3">اسم الجهاز</th>
+                                    <th class="py-3">النوع</th>
+                                    <th class="py-3">الحالة الحالية</th>
+                                    <th class="py-3 text-center">إرسال أمر تحكم</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% if all_devices %}
+                                    {% for device in all_devices %}
+                                    <tr>
+                                        <td class="py-3 px-4 font-monospace text-muted small">{{ device[0] }}</td>
+                                        <td class="py-3 fw-bold text-dark">{{ device[1] }}</td>
+                                        <td class="py-3 text-secondary small">
+                                            <span class="type-badge">{{ device[2] }}</span>
+                                        </td>
+                                        <td class="py-3">
+                                            {% if device[3] == 'ON' %}
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1.5 rounded-pill" style="font-size: 11px; font-weight: 700;">ON</span>
+                                            {% elif device[3] == 'OFF' %}
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1.5 rounded-pill" style="font-size: 11px; font-weight: 700;">OFF</span>
+                                            {% else %}
+                                                <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2 py-1.5 rounded-pill" style="font-size: 11px; font-weight: 700;">AUTO</span>
+                                            {% endif %}
+                                        </td>
+                                        <td class="py-3 text-center">
+                                            <form method="POST" action="/api/devices/devices-panel/control" class="d-inline-flex gap-1.5 justify-content-center">
+                                                <input type="hidden" name="device_id" value="{{ device[0] }}">
+                                                <button type="submit" name="action" value="ON" class="btn btn-sm btn-device-on px-2.5 py-1">ON</button>
+                                                <button type="submit" name="action" value="OFF" class="btn btn-sm btn-device-off px-2.5 py-1">OFF</button>
+                                                <button type="submit" name="action" value="AUTO" class="btn btn-sm btn-device-auto px-2.5 py-1">AUTO</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                {% else %}
+                                    <tr>
+                                        <td colspan="5" class="text-muted text-center py-5 fs-6">
+                                            🚫 لا توجد أجهزة مسجلة حالياً في قاعدة البيانات.
+                                        </td>
+                                    </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
