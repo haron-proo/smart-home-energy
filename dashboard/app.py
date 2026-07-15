@@ -24,4 +24,4 @@ def root():
     return RedirectResponse(url="/dashboard")
 
 if __name__ == "__main__":
-    uvicorn.run("app:app", host="127.0.0.1", port=8066, reload=True)
+    uvicorn.run("app:app", host="127.0.0.1", port=9066, reload=True)

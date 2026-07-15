@@ -58,3 +58,27 @@ CREATE TABLE IF NOT EXISTS public.pc_energy_analytics (
     extra_null_column VARCHAR(255),
     device_id VARCHAR(100)
 );
+
+CREATE TABLE ai_home_reports (
+    report_id SERIAL PRIMARY KEY,
+    report_timestamp TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+
+    -- البيانات الكمية الفعلية
+    total_consumption_kwh NUMERIC(12, 4) NOT NULL,
+    total_hourly_cost_yer NUMERIC(12, 2) NOT NULL,
+    average_price_per_kwh NUMERIC(6, 2) NOT NULL, -- السعر الفعلي المجلوب من جدول الأسعار
+
+    status_level VARCHAR(20) DEFAULT 'NORMAL' CHECK (status_level IN ('NORMAL', 'WARNING', 'CRITICAL', 'ANOMALY_DETECTED')),
+
+    -- تفاصيل الأجهزة الحرجة والشاذة
+    critical_alerts JSONB DEFAULT '[]'::jsonb,
+    ai_recommendations JSONB DEFAULT '[]'::jsonb,
+    ai_personalized_message TEXT,
+
+    -- بيانات تتبع جودة النموذج
+    model_name VARCHAR(50) DEFAULT 'SmartHomePredictiveAI',
+    model_version VARCHAR(20) DEFAULT 'v2.0.0',
+    model_confidence_score NUMERIC(5, 2) DEFAULT 0.98
+);
+
+CREATE INDEX idx_ai_reports_timestamp ON ai_home_reports (report_timestamp DESC);

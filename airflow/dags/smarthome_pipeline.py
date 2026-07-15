@@ -1,52 +1,44 @@
 from datetime import datetime, timedelta
-# 👍 إصلاح أسطر الاستيراد بشكل صريح ونظيف لمنع الـ NameError
 from airflow import DAG
 from airflow.operators.bash import BashOperator
 
-# 1️⃣ الإعدادات الافتراضية لجميع المهام
 default_args = {
     'owner': 'smarthome_admin',
     'depends_on_past': False,
     'start_date': datetime(2026, 1, 1),
     'email_on_failure': False,
     'retries': 1,
-    'retry_delay': timedelta(minutes=5),
+    'retry_delay': timedelta(minutes=2),
 }
 
-# ==============================================================================
-# 2️⃣ الـ DAG الأول المطور: فحص وإطلاق الـ Streaming حياً 24/7 (كل 5 دقائق)
-# ==============================================================================
+# 1_smarthome_continuous_streaming
 with DAG(
     '1_smarthome_continuous_streaming',
     default_args=default_args,
-    description='Check and Keep Spark Streaming Job Running 24/7',
-    schedule_interval='*/5 * * * *',  # ⏱️ تم التعديل: يفحص ويشتغل تلقائياً كل 5 دقائق
+    description='Ensure Spark Streaming Job starts once and runs 24/7',
+    schedule='@once',  # 👈 تم التحديث إلى schedule
     catchup=False,
-    max_active_runs=1,  # 🛑 حماية: يمنع تداخل أكثر من فحص في نفس الوقت
+    max_active_runs=1,
 ) as dag_stream:
 
     launch_stream = BashOperator(
         task_id='launch_spark_stream',
-        # 🚀 سكربت ذكي: يفحص إذا كانت عملية papermill للستريم تعمل داخل الحاوية.
-        # إذا كانت تعمل (grep) يطبع رسالة وينجح، وإذا انقطعت يشغلها فوراً في الخلفية.
         bash_command="""
         if docker exec smarthome-spark-notebook ps aux | grep -v grep | grep -q "spark_stream.ipynb"; then
-            echo "✅ Spark Streaming dynamic job is already running smoothly!";
+            echo "✅ Spark Streaming job is already running smooth!";
         else
-            echo "⚠️ Alert: Streaming job is dead or disconnected! Restarting now...";
+            echo "⚠️ Restarting...";
             docker exec -d smarthome-spark-notebook papermill /home/jovyan/work/processing/spark_stream.ipynb /home/jovyan/work/processing/output_spark_stream.ipynb
         fi
         """
     )
 
-# ==============================================================================
-# 3️⃣ الـ DAG الثاني: معالجة الباركيه التاريخي التزايدي (كل 5 دقائق)
-# ==============================================================================
+# 2_smarthome_historical_parquet
 with DAG(
-    '2_smarthome_historical_parquet_incremental',
+    '2_smarthome_historical_parquet',
     default_args=default_args,
-    description='Runs historical compaction every 5 minutes to fetch new data smoothly',
-    schedule_interval='*/5 * * * *',  # كل 5 دقائق بدقة
+    description='Runs historical compaction every 5 minutes',
+    schedule='*/5 * * * *',  # 👈 تم التحديث
     catchup=False,
 ) as dag_historical:
 
@@ -55,14 +47,40 @@ with DAG(
         bash_command='docker exec smarthome-spark-notebook papermill /home/jovyan/work/processing/historical_parquet.ipynb /home/jovyan/work/processing/output_historical.ipynb'
     )
 
-# ==============================================================================
-# 4️⃣ الـ DAG الثالث: معالجة الباركيه اليومي (مرة واحدة باليوم في الفجر)
-# ==============================================================================
+# 3_smarthome_ai_report_generator
 with DAG(
-    '3_smarthome_process_parquet_once_daily',
+    '3_smarthome_ai_report_generator',
     default_args=default_args,
-    description='Runs parquet batch process once a day at 1:00 AM',
-    schedule_interval='0 1 * * *',
+    description='Runs AI Report Generator every 10 minutes',
+    schedule='*/10 * * * *',  # 👈 تم التحديث
+    catchup=False,
+) as dag_ai_report:
+
+    run_ai_report = BashOperator(
+        task_id='run_ai_report_generator',
+        bash_command='docker exec smarthome-spark-notebook papermill /home/jovyan/work/processing/ai_report_generator.ipynb /home/jovyan/work/processing/output_ai_report_generator.ipynb'
+    )
+
+# 4_smarthome_ml_data_processing
+with DAG(
+    '4_smarthome_ml_data_processing',
+    default_args=default_args,
+    description='Runs ML Data Processing Notebook every 10 minutes',
+    schedule='*/10 * * * *',  # 👈 تم التحديث
+    catchup=False,
+) as dag_ml_data:
+
+    run_ml_data = BashOperator(
+        task_id='run_ml_data_notebook',
+        bash_command='docker exec smarthome-spark-notebook papermill /home/jovyan/work/processing/ml_data.ipynb /home/jovyan/work/processing/output_ml_data.ipynb'
+    )
+
+# 5_smarthome_process_parquet_once_daily
+with DAG(
+    '5_smarthome_process_parquet_once_daily',
+    default_args=default_args,
+    description='Runs parquet batch process once a day',
+    schedule='0 1 * * *',  # 👈 تم التحديث
     catchup=False,
 ) as dag_process_parquet:
 
@@ -71,14 +89,12 @@ with DAG(
         bash_command='docker exec smarthome-spark-notebook papermill /home/jovyan/work/processing/process_parquet_batch.ipynb /home/jovyan/work/processing/output_process_parquet.ipynb'
     )
 
-# ==============================================================================
-# 5️⃣ الـ DAG الرابع: مستودع البيانات (مرة واحدة باليوم بوقت منفصل)
-# ==============================================================================
+# 6_smarthome_spark_dwh_thrice_daily
 with DAG(
-    '4_smarthome_spark_dwh_once_daily',
+    '6_smarthome_spark_dwh_thrice_daily',
     default_args=default_args,
-    description='Runs Spark DWH batch once a day at 4:00 AM',
-    schedule_interval='0 4 * * *',
+    description='Runs Spark DWH batch three times a day',
+    schedule='0 4,12,20 * * *',  # 👈 تم التحديث
     catchup=False,
 ) as dag_dwh:
 

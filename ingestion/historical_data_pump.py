@@ -2,84 +2,74 @@ import os
 import json
 import time
 import random
-from datetime import datetime, timezone  # ⚡ تعديل 1: استيراد timezone هنا
+from datetime import datetime, timedelta, timezone
 from kafka import KafkaProducer
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
-BASE_DIR = r"E:\IoT Project"
 DB_URL = "postgresql://smarthome_user:smarthome_password@localhost:5433/smarthome_energy"
 
-CACHE_INTERVAL_SECONDS = 60
-last_cache_update = 0
-cached_data = {
-    "devices": [],
-    "eco_mode": False
-}
+
+# 1. جلب بيانات الأجهزة والوضع الاقتصادي لمرة واحدة من قاعدة البيانات لتسريع العملية
+def get_devices_and_preferences():
+    try:
+        conn = psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT device_id, device_type, override_status, base_watts, critical FROM devices_status;")
+        devices = cursor.fetchall()
+
+        cursor.execute("SELECT eco_mode_enabled FROM user_preferences WHERE id = 1;")
+        pref_row = cursor.fetchone()
+        eco_mode = pref_row["eco_mode_enabled"] if pref_row else False
+
+        cursor.close()
+        conn.close()
+        return devices, eco_mode
+    except Exception as e:
+        print(f"❌ فشل الاتصال بقاعدة البيانات لجلب الأجهزة: {e}")
+        exit(1)
 
 
-# 1. دالة جلب وإدارة مصفوفة الأجهزة والوضع الاقتصادي عبر الـ Cache
-def get_all_devices_from_db_cached():
-    global last_cache_update, cached_data
-    current_time = time.time()
-    if current_time - last_cache_update > CACHE_INTERVAL_SECONDS or not cached_data["devices"]:
-        try:
-            conn = psycopg2.connect(DB_URL, cursor_factory=RealDictCursor)
-            cursor = conn.cursor()
-
-            # أ) جلب قائمة الأجهزة وحالتها الفورية
-            cursor.execute("SELECT device_id, device_type, override_status, base_watts, critical FROM devices_status;")
-            cached_data["devices"] = cursor.fetchall()
-
-            # ب) جلب حالة الوضع الاقتصادي العامة للمنزل
-            cursor.execute("SELECT eco_mode_enabled FROM user_preferences WHERE id = 1;")
-            pref_row = cursor.fetchone()
-            cached_data["eco_mode"] = pref_row["eco_mode_enabled"] if pref_row else False
-
-            cursor.close()
-            conn.close()
-            last_cache_update = current_time
-            status_text = "مفعّل" if cached_data["eco_mode"] else "معطّل"
-            print(
-                f"🔄 [Cache Update] تم تحديث الأجهزة حياً (العدد: {len(cached_data['devices'])}) | الوضع الاقتصادي: {status_text}")
-        except Exception as e:
-            print(f"⚠️ فشل تحديث الـ Cache، سيتم استخدام البيانات المخزنة مسبقاً في الذاكرة: {e}")
-    return cached_data
-
-
-# 2. الاتصال بـ Kafka وبدء المحاكاة
+# 2. الاتصال بـ Kafka
 try:
     producer = KafkaProducer(
         bootstrap_servers=['localhost:9092'],
-        value_serializer=lambda v: json.dumps(v).encode('utf-8')
+        value_serializer=lambda v: json.dumps(v).encode('utf-8'),
+        # إعدادات لتحسين سرعة الإرسال وضخ كميات ضخمة (Batching)
+        linger_ms=10,
+        batch_size=16384 * 4
     )
-    print("🚀 تم تشغيل محرك محاكاة القصر الذكي المطور (اعتماد كامل على DB + Cache + Eco Mode)!")
+    print("🚀 تم تشغيل مضخة البيانات التاريخية لـ 3 أشهر إلى كافكا...")
 except Exception as e:
     print(f"❌ فشل الاتصال بسيرفر كافكا محلياً: {e}")
     exit(1)
 
+# 3. إعداد النطاق الزمني (3 أشهر ماضية)
+end_time = datetime.now(timezone.utc)
+start_time = end_time - timedelta(days=90)
+
+# خطوة التقدم الزمني (كل 10 دقائق لتوليد حجم بيانات منطقي وسريع)
+time_step = timedelta(minutes=10)
+
+live_devices, eco_mode_active = get_devices_and_preferences()
+if not live_devices:
+    print("⚠️ لا توجد أجهزة في قاعدة البيانات لبدء عملية التوليد!")
+    exit(1)
+
+print(f"⏳ جاري بدء حقن البيانات من تاريخ: {start_time} إلى {end_time}")
+current_sim_time = start_time
+total_messages_sent = 0
+
 try:
-    while True:
-        # ⚡ تعديل 2: جلب الوقت الحالي بتوقيت UTC الحقيقي ومن ثم استخراج الساعة المحلية فقط للمحاكاة والأنماط
-        now = datetime.now(timezone.utc)
+    while current_sim_time <= end_time:
+        # حساب الساعة المحلية للمحاكاة (توقيت مكة/اليمن UTC +3)
+        current_hour = (current_sim_time.hour + 3) % 24
 
-        # للحفاظ على منطقية سيناريوهات المحاكاة (النوم، الذروة)، نقوم بتحويل التوقيت محلياً لساعة مكة/اليمن داخل الـ Loop
-        # جهازك متقدم بـ 3 ساعات عن الـ UTC
-        current_hour = (now.hour + 3) % 24
-
-        current_cache = get_all_devices_from_db_cached()
-        live_devices = current_cache["devices"]
-        eco_mode_active = current_cache["eco_mode"]
-
-        # تحديد الأنماط الزمنية للمنزل (تعتمد على الساعة المحلية المعدلة)
+        # تحديد الأنماط الزمنية التاريخية للرحلة
         is_sleeping_hours = 23 <= current_hour or current_hour <= 6
         is_peak_heat_hours = 11 <= current_hour <= 16
         is_evening_rush = 17 <= current_hour <= 22
-
-        if not live_devices:
-            print("ℹ️ لا توجد أجهزة مسجلة في قاعدة البيانات حالياً، في انتظار الإضافة من شاشة FastAPI...")
-            time.sleep(5)
-            continue
 
         for device in live_devices:
             dev_id = device["device_id"]
@@ -88,7 +78,7 @@ try:
             is_critical = device["critical"]
             db_watts = device["base_watts"] if device["base_watts"] else 100.0
 
-            # تحديد القدرة الكهربائية الأساسية المنطقية (base_watts) بناءً على نوع الجهاز
+            # تحديد القدرة الأساسية
             if dev_type == "AC":
                 base_watts = min(db_watts, 1200.0)
             elif dev_type == "Lighting":
@@ -100,7 +90,7 @@ try:
             else:
                 base_watts = min(db_watts, 80.0)
 
-            # استنتاج المنطقة (Zone) تلقائياً
+            # تحديد المنطقة (Zone)
             if dev_id.startswith("LV"):
                 zone_name = "Living_Room"
                 occupancy_weight = 0.8
@@ -117,7 +107,7 @@ try:
                 zone_name = "Garage_&_Utility"
                 occupancy_weight = 0.3
 
-            # محاكاة وجود أشخاص في الغرف
+            # محاكاة الوجود البشري التاريخي
             if is_sleeping_hours:
                 room_occupied = True if zone_name == "Master_Bedroom" else (random.random() < 0.05)
             elif is_evening_rush:
@@ -125,7 +115,7 @@ try:
             else:
                 room_occupied = random.random() < occupancy_weight
 
-            # حساب حالة التشغيل والقدرة بناءً على التحكم والـ Eco Mode
+            # حساب القدرة والتشغيل
             state = "OFF"
             power = 0.0
 
@@ -135,7 +125,7 @@ try:
             elif device_override == "ON":
                 state = "ON"
                 power = random.uniform(base_watts * 0.9, base_watts * 1.1)
-            else:  # وضع الـ AUTO التلقائي الذكي
+            else:  # AUTO
                 if is_critical or dev_type == "Critical_Appliance":
                     state = "ON"
                     power = random.uniform(base_watts * 0.9, base_watts * 1.1)
@@ -178,7 +168,7 @@ try:
                         state = "ON"
                         power = random.uniform(base_watts * 0.7, base_watts * 1.1)
 
-            # طبقة حقن مشاكل جودة البيانات (Data Quality) واضطراب المستشعرات
+            # جودة البيانات
             if state != "OFF":
                 dice_roll = random.random()
                 if dice_roll < 0.01:
@@ -192,10 +182,9 @@ try:
             else:
                 power = 0.0
 
-            # بناء الرسالة النهائية وضخها في كافكا (Kafka)
-            # ⚡ التعديل الجوهري: الطابع الزمني هنا سيخرج الآن بصيغة UTC قياسية ومصنفة
+            # بناء الرسالة بالتوقيت التاريخي التدريجي
             payload = {
-                "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
+                "timestamp": current_sim_time.strftime("%Y-%m-%d %H:%M:%S"),
                 "house_type": "Smart_Luxury_Villa",
                 "currency": "YER",
                 "zone": zone_name,
@@ -206,20 +195,20 @@ try:
                 "status": state
             }
             producer.send('energy_events', value=payload)
+            total_messages_sent += 1
 
-            if state in ["SENSOR_FAULT", "LOST_SIGNAL"]:
-                print(f"⚠️ [DATA QUALITY ISSUE] {zone_name} -> {dev_id}: {power} ({state})")
-            else:
-                eco_prefix = "[ECO MODE ON]" if (eco_mode_active and state == "ON") else ""
-                print(f"⚡ [Stream YER] {eco_prefix} {zone_name} -> {dev_id}: {power} W ({state})")
+        # طباعة تقدم العملية كل يوم كامل من المحاكاة لمنع ازدحام المخرجات
+        if current_sim_time.hour == 0 and current_sim_time.minute == 0:
+            print(
+                f"📅 تم إرسال بيانات اليوم التاريخي: {current_sim_time.strftime('%Y-%m-%d')} | إجمالي الرسائل: {total_messages_sent}")
+            # تفريغ الذاكرة المؤقتة وضمان وصول البيانات لكافكا بشكل فوري
+            producer.flush()
 
-            if random.random() < 0.005 and power is not None and state != "OFF":
-                producer.send('energy_events', value=payload)
+        # الانتقال للخطوة التاريخية القادمة
+        current_sim_time += time_step
 
-        # عرض نبضة التحديث بالتوقيت المحلي لليمن لتسهيل المراقبة البشرية
-        print(f"--- 🕒 تم بث نبضة القراءات المحدّثة والمنطقية للساعة {current_hour:02d}:00 بنجاح (توقيت محلي) ---")
-        time.sleep(5)
+    print(f"🎉 [نجاح ساحق] تم إرسال {total_messages_sent} قراءة تاريخية متكاملة لـ 3 أشهر ماضية إلى كافكا بنجاح!")
 except KeyboardInterrupt:
-    print("\n🛑 تم إيقاف محرك المحاكاة.")
+    print("\n🛑 تم إيقاف عملية الحقن.")
 finally:
     producer.close()
