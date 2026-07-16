@@ -82,3 +82,16 @@ CREATE TABLE ai_home_reports (
 );
 
 CREATE INDEX idx_ai_reports_timestamp ON ai_home_reports (report_timestamp DESC);
+
+-- فهرس للتاريخ لأن التقارير دائماً تطلب "آخر 30 يوم" أو "شهر معين"
+CREATE INDEX idx_analytics_report_date ON dwh_energy_analytics(report_date);
+
+-- فهرس مركب للتاريخ والمنطقة معاً لتسريع الفلاتر المزدوجة في Metabase
+CREATE INDEX idx_analytics_date_zone ON dwh_energy_analytics(report_date, zone);
+
+-- تسريع عمليات الربط (Join) والبحث المبني على الساعة
+CREATE INDEX idx_prices_hour ON electricity_prices(hour);
+
+
+-- تسريع استعلام الـ Distinct ON وجلب القراءات اللحظية الأخيرة للأجهزة
+CREATE INDEX idx_spark_windowed_query ON spark_windowed_energy(zone, device_type, window_end DESC);

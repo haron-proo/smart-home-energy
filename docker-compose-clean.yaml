@@ -1,4 +1,3 @@
-# E:\IoT Project\docker-compose-clean.yaml
 networks:
   smart-home-net:
     driver: bridge
@@ -88,15 +87,16 @@ services:
     ports:
       - "8880:8080"
     environment:
-      - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://smarthome_user:smarthome_password@postgres:5432/airflow_db
-      - PYTHONPATH=/opt/airflow/custom_libs
-      - TZ=Asia/Riyadh  # ⏰ لضمان جدولة المهام اللحظية واليومية بناءً على توقيتك المحلي
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://smarthome_user:smarthome_password@postgres:5432/airflow_db
+      PYTHONPATH: /opt/airflow/custom_libs
+      TZ: Asia/Riyadh  # ⏰ لضمان جدولة المهام اللحظية واليومية بناءً على توقيتك المحلي
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./processing:/opt/airflow/processing
       - ./airflow/custom_libs:/opt/airflow/custom_libs
+      - /var/run/docker.sock:/var/run/docker.sock # 👈 أضف هذا السطر
     networks:
       - smart-home-net
     depends_on:
@@ -110,16 +110,40 @@ services:
     restart: always
     command: scheduler
     environment:
-      - AIRFLOW__CORE__LOAD_EXAMPLES=False
-      - AIRFLOW__CORE__EXECUTOR=LocalExecutor
-      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=postgresql+psycopg2://smarthome_user:smarthome_password@postgres:5432/airflow_db
-      - PYTHONPATH=/opt/airflow/custom_libs
-      - TZ=Asia/Riyadh  # ⏰ مطابقة ساعة المجدول مع الويب سيرفر لمنع أي تأخير في الـ DAGs
+      AIRFLOW__CORE__LOAD_EXAMPLES: "False"
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://smarthome_user:smarthome_password@postgres:5432/airflow_db
+      PYTHONPATH: /opt/airflow/custom_libs
+      TZ: Asia/Riyadh  # ⏰ مطابقة ساعة المجدول مع الويب سيرفر لمنع أي تأخير في الـ DAGs
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./processing:/opt/airflow/processing
       - ./airflow/custom_libs:/opt/airflow/custom_libs
+      - /var/run/docker.sock:/var/run/docker.sock # 👈 أضف هذا السطر
     networks:
       - smart-home-net
     depends_on:
       - airflow-webserver
+
+  # ==============================================================================
+  # ⭐ الخدمة المضافة حديثاً لتشغيل البث اللحظي للسبارك تلقائياً ومراقبته 24/7
+  # ==============================================================================
+  spark-energy-streamer:
+    image: jupyter/pyspark-notebook:spark-3.5.0
+    container_name: smarthome-spark-streamer
+    user: "0:0" # لضمان الصلاحيات الكاملة في نظام الملفات وحذف الـ Checkpoints
+    restart: always
+    environment:
+      TZ: Asia/Riyadh
+    command: >
+      spark-submit 
+      --packages org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.postgresql:postgresql:42.6.0 
+      /home/jovyan/work/processing/spark_stream.py
+    volumes:
+      - .:/home/jovyan/work
+      - ./spark-ivy-cache:/home/jovyan/.ivy2
+    networks:
+      - smart-home-net
+    depends_on:
+      - kafka
+      - postgres

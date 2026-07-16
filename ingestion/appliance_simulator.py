@@ -2,7 +2,7 @@ import os
 import json
 import time
 import random
-from datetime import datetime, timezone  # ⚡ تعديل 1: استيراد timezone هنا
+from datetime import datetime  # ⚡ تم اعتماد datetime المحلي الفعلي
 from kafka import KafkaProducer
 import psycopg2
 from psycopg2.extras import RealDictCursor
@@ -60,18 +60,15 @@ except Exception as e:
 
 try:
     while True:
-        # ⚡ تعديل 2: جلب الوقت الحالي بتوقيت UTC الحقيقي ومن ثم استخراج الساعة المحلية فقط للمحاكاة والأنماط
-        now = datetime.now(timezone.utc)
-
-        # للحفاظ على منطقية سيناريوهات المحاكاة (النوم، الذروة)، نقوم بتحويل التوقيت محلياً لساعة مكة/اليمن داخل الـ Loop
-        # جهازك متقدم بـ 3 ساعات عن الـ UTC
-        current_hour = (now.hour + 3) % 24
+        # ⚡ إلغاء الـ UTC تماماً واعتماد التوقيت المحلي الفعلي للنظام مباشرة
+        now = datetime.now()
+        current_hour = now.hour
 
         current_cache = get_all_devices_from_db_cached()
         live_devices = current_cache["devices"]
         eco_mode_active = current_cache["eco_mode"]
 
-        # تحديد الأنماط الزمنية للمنزل (تعتمد على الساعة المحلية المعدلة)
+        # تحديد الأنماط الزمنية للمنزل
         is_sleeping_hours = 23 <= current_hour or current_hour <= 6
         is_peak_heat_hours = 11 <= current_hour <= 16
         is_evening_rush = 17 <= current_hour <= 22
@@ -88,7 +85,7 @@ try:
             is_critical = device["critical"]
             db_watts = device["base_watts"] if device["base_watts"] else 100.0
 
-            # تحديد القدرة الكهربائية الأساسية المنطقية (base_watts) بناءً على نوع الجهاز
+            # تحديد القدرة الكهربائية الأساسية
             if dev_type == "AC":
                 base_watts = min(db_watts, 1200.0)
             elif dev_type == "Lighting":
@@ -178,7 +175,7 @@ try:
                         state = "ON"
                         power = random.uniform(base_watts * 0.7, base_watts * 1.1)
 
-            # طبقة حقن مشاكل جودة البيانات (Data Quality) واضطراب المستشعرات
+            # طبقة حقن مشاكل جودة البيانات
             if state != "OFF":
                 dice_roll = random.random()
                 if dice_roll < 0.01:
@@ -192,8 +189,7 @@ try:
             else:
                 power = 0.0
 
-            # بناء الرسالة النهائية وضخها في كافكا (Kafka)
-            # ⚡ التعديل الجوهري: الطابع الزمني هنا سيخرج الآن بصيغة UTC قياسية ومصنفة
+            # بناء الرسالة النهائية وضخها في كافكا بالتوقيت المحلي الفعلي المتطابق مع جهازك
             payload = {
                 "timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
                 "house_type": "Smart_Luxury_Villa",
@@ -216,8 +212,7 @@ try:
             if random.random() < 0.005 and power is not None and state != "OFF":
                 producer.send('energy_events', value=payload)
 
-        # عرض نبضة التحديث بالتوقيت المحلي لليمن لتسهيل المراقبة البشرية
-        print(f"--- 🕒 تم بث نبضة القراءات المحدّثة والمنطقية للساعة {current_hour:02d}:00 بنجاح (توقيت محلي) ---")
+        print(f"--- 🕒 تم بث نبضة القراءات المحدّثة بنجاح في الوقت الفعلي {now.strftime('%H:%M:%S')} ---")
         time.sleep(5)
 except KeyboardInterrupt:
     print("\n🛑 تم إيقاف محرك المحاكاة.")
