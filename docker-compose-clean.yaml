@@ -40,17 +40,25 @@ services:
     networks:
       - smart-home-net
 
-  # 3. بيئة المعالجة والـ ETL (سبارك وجوبيتر)
+  # 3. بيئة المعالجة والـ ETL (سبارك وجوبيتر + خادم الـ API لتشغيل الـ Notebooks)
   spark-notebook:
     image: jupyter/pyspark-notebook:spark-3.5.0
     container_name: smarthome-spark-notebook
     ports:
       - "8888:8888"
+      - "8000:8000" # 👈 فتح منفذ الـ API ليتواصل معه إيرفلو والـ Host
     environment:
       TZ: Asia/Riyadh  # ⏰ إجبار محرك سبارك وجوبيتر على مطابقة ساعة جهازك
     volumes:
       - .:/home/jovyan/work
       - ./spark-ivy-cache:/home/jovyan/.ivy2
+    # 👈 السطر التالي يقوم بتثبيت مكتبات FastAPI وتشغيل خادم الويب app.py بالخلفية فوراً عند الإقلاع
+    command: >
+      bash -c "
+      pip install fastapi uvicorn papermill --quiet &&
+      (python /home/jovyan/work/processing/app.py &) &&
+      start-notebook.sh --NotebookApp.token=''
+      "
     networks:
       - smart-home-net
 
@@ -74,7 +82,7 @@ services:
       - postgres
 
   # ==============================================================================
-  # 🚀 خدمات أباتشي إير فلو الذكية
+  # 🚀 خدمات أباتشي إير فلو الذكية (تم إزالة الربط المعقد للـ Socket هنا بالكامل)
   # ==============================================================================
 
   # أ. واجهة المستخدم الرسومية لإير فلو (Airflow Webserver)
@@ -91,12 +99,11 @@ services:
       AIRFLOW__CORE__EXECUTOR: LocalExecutor
       AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://smarthome_user:smarthome_password@postgres:5432/airflow_db
       PYTHONPATH: /opt/airflow/custom_libs
-      TZ: Asia/Riyadh  # ⏰ لضمان جدولة المهام اللحظية واليومية بناءً على توقيتك المحلي
+      TZ: Asia/Riyadh  # ⏰ لضمان جدولة المهام بناءً على توقيتك المحلي
     volumes:
       - ./airflow/dags:/opt/airflow/dags
       - ./processing:/opt/airflow/processing
       - ./airflow/custom_libs:/opt/airflow/custom_libs
-      - /var/run/docker.sock:/var/run/docker.sock # 👈 أضف هذا السطر
     networks:
       - smart-home-net
     depends_on:
@@ -119,7 +126,6 @@ services:
       - ./airflow/dags:/opt/airflow/dags
       - ./processing:/opt/airflow/processing
       - ./airflow/custom_libs:/opt/airflow/custom_libs
-      - /var/run/docker.sock:/var/run/docker.sock # 👈 أضف هذا السطر
     networks:
       - smart-home-net
     depends_on:
